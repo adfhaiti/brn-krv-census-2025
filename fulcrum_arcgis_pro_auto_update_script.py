@@ -1,5 +1,4 @@
 # This script automates the process of downloading GeoJSON data from Fulcrum, converting it to ArcGIS feature classes, and defining their spatial reference.
-
 import arcpy
 import requests
 import os
