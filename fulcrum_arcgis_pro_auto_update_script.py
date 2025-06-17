@@ -1,3 +1,5 @@
+# This script automates the process of downloading GeoJSON data from Fulcrum, converting it to ArcGIS feature classes, and defining their spatial reference.
+
 import arcpy
 import requests
 import os
@@ -30,13 +32,13 @@ try:
     response_parent.raise_for_status()  # Raise exception if download fails
     with open(local_parent_file, "wb") as f:
         f.write(response_parent.content)
-    
+
     # Convert parent GeoJSON to feature class; explicitly set geometry type to "POINT"
     arcpy.conversion.JSONToFeatures(local_parent_file, output_fc_parent, "POINT")
-    
+
     # Define spatial reference for the parent feature class
     arcpy.DefineProjection_management(output_fc_parent, spatial_ref)
-    
+
     print("Parent dataset created successfully at:", output_fc_parent)
 except Exception as e:
     print("An error occurred processing the parent GeoJSON:")
@@ -51,17 +53,14 @@ try:
     response_child.raise_for_status()
     with open(local_child_file, "wb") as f:
         f.write(response_child.content)
-    
+
     # Convert child GeoJSON to feature class; explicitly set geometry type to "POINT"
     arcpy.conversion.JSONToFeatures(local_child_file, output_fc_child, "POINT")
-    
+
     # Define spatial reference for the child feature class
     arcpy.DefineProjection_management(output_fc_child, spatial_ref)
-    
+
     print("Child dataset created successfully at:", output_fc_child)
 except Exception as e:
     print("An error occurred processing the child GeoJSON:")
     print(e)
-
-
-
