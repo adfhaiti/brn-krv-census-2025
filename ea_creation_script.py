@@ -1,12 +1,12 @@
 import arcpy
 import os
-
+# --- SCRIPT SETUP ---
 # Set workspace
 workspace = r"G:\ADF Haiti\GIS - Documents\_PwojeADF\pwoje_census_data_collection_bracing_neighbors_geca\pwoje_census_data_collection_bracing_neighbors_geca.gdb"
 arcpy.env.workspace = workspace
 arcpy.env.overwriteOutput = True
 
-# Input parameters
+# Input building points layer
 building_points = "okay_google_open_buildings_sud_haiti_reprojected"
 
 # First, let's make sure we have the BuildCount field
@@ -28,8 +28,8 @@ for target_size in target_sizes:
     # Define output feature class
     output_zones = os.path.join(workspace, f"okay_buildings_bbz_{target_size}_v2")
     
-    # Build the zone building criteria string
-    # Format: "field_name target_value weight"
+    # Define the zone building criteria string. Format: "field_name target_value weight"
+    # This tells the tool to aim for a SUM of 'BuildCount' equal to the target_size.
     zone_criteria = f"BuildCount {target_size} 1"
     
     print(f"Zone criteria: {zone_criteria}")
