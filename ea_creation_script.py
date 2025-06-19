@@ -17,7 +17,7 @@ if "BuildCount" not in existing_fields:
     arcpy.AddField_management(building_points, "BuildCount", "SHORT")
     arcpy.CalculateField_management(building_points, "BuildCount", "1", "PYTHON3")
 
-# Process both target sizes
+# Define the target sizes for both the Enumeration Areas to process
 target_sizes = [375, 750]
 
 for target_size in target_sizes:
@@ -73,7 +73,7 @@ for target_size in target_sizes:
         fields = [f.name for f in arcpy.ListFields(output_zones)]
         print(f"\nFields in output: {', '.join(fields)}")
         
-        # Look for the sum field (it might be named something like "SUM_BuildCount")
+        # Look for  the summary field created by the tool (it might be named something like "SUM_BuildCount")
         sum_field = None
         for field in fields:
             if "BuildCount" in field and "SUM" in field.upper():
