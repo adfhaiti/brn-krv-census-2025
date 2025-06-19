@@ -52,8 +52,8 @@ for target_size in target_sizes:
             distance_to_consider=None,
             categorial_variable=None,
             proportion_method="",
-            population_size=100,
-            number_generations=50,
+            population_size=150,
+            number_generations=100,
             mutation_factor=0.1,
             output_convergence_table=None
         )
