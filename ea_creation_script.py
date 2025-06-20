@@ -36,19 +36,13 @@ for target_size in target_sizes:
     print(f"Processing for target: {target_size} buildings (with maximum homogeneity)")
     print(f"{'='*60}")
 
-    # --- STEP 1: CLUSTER POINTS using BuildBalancedZones ---
-    intermediate_clustered_points = f"temp_ClusteredPoints_{target_size}"
-
-    # --- *** NEW AGGRESSIVE PARAMETER SETTINGS *** ---
-    # 1. Increase the weight of the target to 100 to prioritize numbers.
-    # 2. Disable compactness to prioritize numbers over shape.
-    target_weight = 100
-    zone_criteria_string = f"BuildCount {target_size} {target_weight}"
-    zone_shape_characteristic = "NONE"
-
     # --- PARAMETER DEFINITION ---
     # Define a unique name for the output feature class
-    output_zones = f"EA_Zones_{target_size}_v4"
+    output_zones = f"EA_Zone_Point_Clusters_{target_size}_v1"
+
+    # Define the zone building criteria string. Format: "field_name target_value weight"
+    # This tells the tool to aim for a SUM of 'BuildCount' equal to the target_size.
+    zone_criteria = f"BuildCount {target_size} 20"
 
     # Define the zone building criteria string. Format: "field_name target_value weight"
     # This tells the tool to aim for a SUM of 'BuildCount' equal to the target_size.
@@ -72,11 +66,11 @@ for target_size in target_sizes:
             output_features=output_zones,
             zone_creation_method="ATTRIBUTE_TARGET",
             number_of_zones=None,
-            zone_building_criteria_target=zone_criteria,
-            zone_building_criteria=None,
+            zone_building_criteria_target=zone_criteria,  # zone_building_criteria_target takes [[variable (field), sum, weight]. In this case zone_criteria includes #target_sizes = [375, 750]
+            zone_building_criteria=None,    # Variant of ↑ that uses variable, weight, but NOT sum
             spatial_constraints="TRIMMED_DELAUNAY_TRIANGULATION",
             weights_matrix_file=None,
-            zone_characteristics="COMPACTNESS",
+            zone_characteristics="EQUAL_NUMBER_OF_FEATURES",
             attribute_to_consider=None,
             distance_to_consider=None,
             categorial_variable=None,
@@ -86,58 +80,62 @@ for target_size in target_sizes:
             mutation_factor=0.1,
             output_convergence_table=None,
         )
-
-        print(f"Successfully created feature class: {output_zones}")
-
-        # --- VALIDATION STEP ---
-        # The script now validates the output against your strict +/- 15 requirement.
-        print("\nValidating results against the +/- 15 building tolerance...")
-
-        # Find the summary field created by the tool (e.g., "SUM_BuildCount")
-        sum_field = None
-        for field in arcpy.ListFields(output_zones):
-            if "BuildCount" in field.name and "SUM" in field.name.upper():
-                sum_field = field.name
-                break
-
-        if not sum_field:
-            print("Could not find summary field in output. Validation skipped.")
-            continue
-
-        print(f"Using field '{sum_field}' for validation.")
-
-        # Analyze the distribution of buildings per zone
-        with arcpy.da.SearchCursor(output_zones, [sum_field, "ZONE_ID"]) as cursor:
-            counts = []
-            within_tolerance = 0
-            outside_tolerance = 0
-
-            for row in cursor:
-                building_count = row[0]
-                counts.append(building_count)
-
-                # Check if the result is within your desired tolerance
-                if (target_size - 15) <= building_count <= (target_size + 15):
-                    within_tolerance += 1
-                else:
-                    outside_tolerance += 1
-
-            if counts:
-                print("\n--- Zone Statistics ---")
-                print(f"Total zones created: {len(counts)}")
-                print(
-                    f"Zones WITHIN tolerance ({target_size} +/- 15): {within_tolerance}"
-                )
-                print(f"Zones OUTSIDE tolerance: {outside_tolerance}")
-                print(f"Minimum buildings per zone: {min(counts)}")
-                print(f"Maximum buildings per zone: {max(counts)}")
-                print(f"Average buildings per zone: {sum(counts)/len(counts):.1f}")
+        print(f"Point clustering successfully completed: {output_zones}")
 
     except arcpy.ExecuteError:
-        print(f"\nERROR running Build Balanced Zones for target {target_size}.")
-        print(arcpy.GetMessages())
+        print(f"ERROR during BuildBalancedZones: {arcpy.GetMessages()}")
+        continue
     except Exception as e:
-        print(f"\nAn unexpected error occurred: {str(e)}")
+        print(f"An unexpected error occurred: {str(e)}")
+        continue
+
+    # --- VALIDATION STEP ---
+    # The script now validates the output against your strict +/- 15 requirement.
+    print("\nValidating results against the +/- 15 building tolerance...")
+
+    # Find the summary field created by the tool (e.g., "SUM_BuildCount")
+    sum_field = None
+    for field in arcpy.ListFields(output_zones):
+        if "BuildCount" in field.name and "SUM" in field.name.upper():
+            sum_field = field.name
+            break
+
+    if not sum_field:
+        print("Could not find summary field in output. Validation skipped.")
+        continue
+
+    print(f"Using field '{sum_field}' for validation.")
+
+    # Analyze the distribution of buildings per zone
+    with arcpy.da.SearchCursor(output_zones, [sum_field, "ZONE_ID"]) as cursor:
+        counts = []
+        within_tolerance = 0
+        outside_tolerance = 0
+
+        for row in cursor:
+            building_count = row[0]
+            counts.append(building_count)
+
+            # Check if the result is within your desired tolerance
+            if (target_size - 15) <= building_count <= (target_size + 15):
+                within_tolerance += 1
+            else:
+                outside_tolerance += 1
+
+        if counts:
+            print("\n--- Zone Statistics ---")
+            print(f"Total zones created: {len(counts)}")
+            print(f"Zones WITHIN tolerance ({target_size} +/- 15): {within_tolerance}")
+            print(f"Zones OUTSIDE tolerance: {outside_tolerance}")
+            print(f"Minimum buildings per zone: {min(counts)}")
+            print(f"Maximum buildings per zone: {max(counts)}")
+            print(f"Average buildings per zone: {sum(counts)/len(counts):.1f}")
+
+except arcpy.ExecuteError:
+    print(f"\nERROR running Build Balanced Zones for target {target_size}.")
+    print(arcpy.GetMessages())
+except Exception as e:
+    print(f"\nAn unexpected error occurred: {str(e)}")
 
 print(f"\n{'='*60}")
 print("Process complete!")
