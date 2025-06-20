@@ -33,21 +33,31 @@ target_sizes = [375, 750]
 
 for target_size in target_sizes:
     print(f"\n{'='*60}")
-    print(f"Creating Enumeration Areas with a target of {target_size} buildings")
+    print(f"Processing for target: {target_size} buildings (with maximum homogeneity)")
     print(f"{'='*60}")
+
+    # --- STEP 1: CLUSTER POINTS using BuildBalancedZones ---
+    intermediate_clustered_points = f"temp_ClusteredPoints_{target_size}"
+
+    # --- *** NEW AGGRESSIVE PARAMETER SETTINGS *** ---
+    # 1. Increase the weight of the target to 100 to prioritize numbers.
+    # 2. Disable compactness to prioritize numbers over shape.
+    target_weight = 100
+    zone_criteria_string = f"BuildCount {target_size} {target_weight}"
+    zone_shape_characteristic = "NONE"
 
     # --- PARAMETER DEFINITION ---
     # Define a unique name for the output feature class
-    output_zones = f"EA_Zones_{target_size}_v3"
+    output_zones = f"EA_Zones_{target_size}_v4"
 
     # Define the zone building criteria string. Format: "field_name target_value weight"
     # This tells the tool to aim for a SUM of 'BuildCount' equal to the target_size.
-    zone_criteria = f"BuildCount {target_size} 1"
+    zone_criteria = f"BuildCount {target_size} 20"
 
     # ** TUNING PARAMETERS FOR FUNCTIONAL TOLERANCE **
     # Increase generations and population size to find a more optimal solution.
     # Default is 100 population, 50 generations. We'll increase them.
-    pop_size = 200  # More solutions to test in each generation
+    pop_size = 150  # More solutions to test in each generation
     num_gens = 100  # More iterations to refine the solutions
 
     print(f"Targeting {target_size} buildings per zone.")
